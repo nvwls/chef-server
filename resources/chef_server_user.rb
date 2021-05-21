@@ -81,7 +81,7 @@ action :create do
       command "chef-server-ctl grant-server-admin-permissions #{usr}"
       not_if { serveradmin }
     end
-    
+
     ruby_block "granted-server-admin #{usr}" do
       block do
         node.run_state['chef-server']['server-admins'] << usr
@@ -93,7 +93,7 @@ action :create do
       command "chef-server-ctl remove-server-admin-permissions #{usr}"
       only_if { serveradmin }
     end
-    
+
     ruby_block "removed-server-admin #{usr}" do
       block do
         node.run_state['chef-server']['server-admins'].delete(usr)

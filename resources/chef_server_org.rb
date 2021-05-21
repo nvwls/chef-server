@@ -40,6 +40,13 @@ end
 action :create do
   org = new_resource.org
 
+  ruby_block "reload-org #{org}" do
+    action :nothing
+    block do
+      node.run_state['chef-server']['orgs'][org] = ChefServerCookbook.load_org(org)
+    end
+  end
+
   directory '/etc/opscode/orgs' do
     owner 'root'
     group 'root'
@@ -53,13 +60,7 @@ action :create do
     retries 10
     command "chef-server-ctl org-create #{org} '#{org_full_name}' -f #{key}"
     not_if { node.run_state['chef-server']['orgs'].include?(org) }
-  end
-
-  ruby_block "org-created #{org}" do
-    block do
-      node.run_state['chef-server']['orgs'][org] = ChefServerCookbook.load_org(org)
-    end
-    not_if { node.run_state['chef-server']['orgs'].include?(org) }
+    notifies :run, "ruby_block[reload-org #{org}]", :immediately
   end
 
   new_resource.users.each do |usr|
@@ -67,16 +68,16 @@ action :create do
       command "chef-server-ctl org-user-add #{org} #{usr}"
       only_if { node.run_state['chef-server']['users'].include?(usr) }
       not_if { node.run_state['chef-server']['orgs'][org]['users'].include?(usr) }
-      notifies :run, "ruby_block[org-created #{org}", :delayed
+      notifies :run, "ruby_block[reload-org #{org}]", :delayed
     end
   end
 
-  new_resource.admins.each do |user|
-    execute "add-admin-#{user}-org-#{new_resource.org}" do
+  new_resource.admins.each do |usr|
+    execute "org-user-add --admin #{org} #{usr}" do
       command "chef-server-ctl org-user-add --admin #{org} #{usr}"
       only_if { node.run_state['chef-server']['users'].include?(usr) }
-      not_if { node.run_state['chef-server']['orgs'][org]['users'].include?(usr) }
-      notifies :run, "ruby_block[org-created #{org}", :delayed
+      not_if { node.run_state['chef-server']['orgs'][org]['admins'].include?(usr) }
+      notifies :run, "ruby_block[reload-org #{org}]", :delayed
     end
   end
 
@@ -84,7 +85,7 @@ action :create do
     execute "org-user-remove #{org} #{usr}" do
       command "chef-server-ctl org-user-remove #{org} #{usr}"
       only_if { node.run_state['chef-server']['orgs'][org]['users'].include?(usr) }
-      notifies :run, "ruby_block[org-created #{org}", :delayed
+      notifies :run, "ruby_block[reload-org #{org}]", :delayed
     end
   end
 end

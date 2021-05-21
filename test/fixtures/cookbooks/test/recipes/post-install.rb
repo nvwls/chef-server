@@ -2,6 +2,8 @@ execute 'setup' do
   command <<EOF
 rm -f /tmp/run_state.json
 
+chef-server-ctl org-delete sample -y || true
+
 chef-server-ctl user-delete now -y || true
 chef-server-ctl user-create now now now now@example.com dontusethisforreal --filename /dev/null
 
@@ -43,10 +45,9 @@ end
 
 chef_server_org 'sample' do
   org_full_name 'Sample Size'
-  admins []
-  # --association_user exemplar
-  # --filename /tmp/exemplar.key'
-  # not_if 'chef-server-ctl org-list | grep "sample"'
+  admins %w(exemplar)
+  users %w(now)
+  remove_users %w(was)
 end
 
 file '/tmp/run_state.json' do

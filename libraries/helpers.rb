@@ -51,41 +51,89 @@ module ChefServerCookbook
       }
     end
 
+    def load_org_admins(org)
+      res = {}
+
+      obj = pivotal.get("organizations/#{org}/groups/admins")
+      obj['users'].each do |id|
+        next if id == 'pivotal'
+        res[id] = :user
+      end
+
+      obj['clients'].each do |id|
+        res[id] = :client
+      end
+
+      res
+    end
+
+    def load_org_users(org)
+      res = {}
+
+      all = pivotal.get("organizations/#{org}/users")
+      all.each do |it|
+        usr = it['user']['username']
+        res[usr] = :user
+      end
+
+      res
+    end
+
     def load_org(org)
       obj = pivotal.get("organizations/#{org}")
-      warn obj.inspect
-      obj = pivotal.get("organizations/#{org}/groups/users")
+
+      {
+        'full_name' => obj['full_name'],
+        'admins' => load_org_admins(org),
+        'users' => load_org_users(org),
+      }
     end
 
     def load_orgs
-      all = {}
+      res = {}
 
-      list = pivotal.get('organizations').keys.sort
-      list.each do |org|
-        all[org] = load_org(org)
+      all = pivotal.get('organizations').keys.sort
+      all.each do |org|
+        res[org] = load_org(org)
       end
 
-      all
+      res
     end
 
     def load_user(usr)
       obj = pivotal.get("users/#{usr}")
+      res = {
+        'first_name' => obj['first_name'],
+        'last_name' => obj['last_name'],
+        'email' => obj['email'],
+        'keys' => {},
+      }
 
       pub = obj['public_key']
-      pub.strip! if pub.is_a?(String)
+      if pub.nil?
+        all = pivotal.get("users/#{usr}/keys")
+        all.each do |it|
+          key = it['name']
+          obj = pivotal.get("users/#{usr}/keys/#{key}")
 
-      pub
+          res['keys'][key] = obj['public_key'].strip
+        end
+      else
+        res['keys']['default'] = pub.strip
+      end
+
+      res
     end
 
     def load_users
-      all = {}
+      res = {}
 
-      list = pivotal.get('users').keys.sort
-      list.each do |usr|
-        all[usr] = load_user(usr)
+      all = pivotal.get('users').keys.sort
+      all.each do |usr|
+        res[usr] = load_user(usr)
       end
 
-      all
+      res
     end
 
     def load_server_admins
