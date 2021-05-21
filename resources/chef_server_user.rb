@@ -1,6 +1,6 @@
 #
-# Author:: Joseph J. Nuspl Jr. <nuspl@nvwls.com>
 # Author:: Nathan Cerny <ncerny@chef.io>
+# Author:: Joseph J. Nuspl Jr. <nuspl@nvwls.com>
 #
 # Cookbook:: chef-server
 # Resource:: chef_server_user
@@ -20,16 +20,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Derived from the chef_user resource in chef-ingredient
+
 provides :chef_server_user
 resource_name :chef_server_user
 
 property :username, String, name_property: true
-property :first_name, String, required: true
-property :last_name, String, required: true
-property :email, String, required: true
+property :first_name, String
+property :last_name, String
+property :email, String
 property :password, String
 property :key_path, String
 property :serveradmin, [true, false], default: false
+
+action_class do
+  def check_resource_semantics!
+    if action == :create
+      %i(first_name last_name email).each do |prop|
+        next if property_is_set?(prop)
+        raise Chef::Exceptions::ValidationFailed, "#{prop} is required"
+      end
+    end
+  end
+end
 
 load_current_value do
   node.run_state['chef-server'] ||= ChefServerCookbook.run_state

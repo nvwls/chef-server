@@ -27,7 +27,7 @@ resource_name :chef_server_org
 
 property :org, String, name_property: true
 property :org_full_name, String
-property :admins, Array, required: true
+property :admins, Array
 property :users, Array, default: []
 property :remove_users, Array, default: []
 property :key_path, String
@@ -47,8 +47,8 @@ action :create do
     recursive true
   end
 
-  org_full_name = (property_is_set?(:org_full_name) ? new_resource.org_full_name : new_resource.org)
-  key = (property_is_set?(:key_path) ? new_resource.key_path : "/etc/opscode/orgs/#{new_resource.org}-validation.pem")
+  org_full_name = (property_is_set?(:org_full_name) ? new_resource.org_full_name : org)
+  key = (property_is_set?(:key_path) ? new_resource.key_path : "/etc/opscode/orgs/#{org}-validation.pem")
   execute "org-create #{org}" do
     retries 10
     command "chef-server-ctl org-create #{org} '#{org_full_name}' -f #{key}"

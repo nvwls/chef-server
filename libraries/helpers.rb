@@ -51,14 +51,18 @@ module ChefServerCookbook
       }
     end
 
+    def load_org(org)
+      obj = pivotal.get("organizations/#{org}")
+      warn obj.inspect
+      obj = pivotal.get("organizations/#{org}/groups/users")
+    end
+
     def load_orgs
       all = {}
 
       list = pivotal.get('organizations').keys.sort
       list.each do |org|
-        obj = pivotal.get("organizations/#{org}/groups/users")
-
-        all[org] = {}
+        all[org] = load_org(org)
       end
 
       all

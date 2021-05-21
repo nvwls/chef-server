@@ -19,7 +19,7 @@ chef_server_user 'now' do
   serveradmin true
   first_name 'Example'
   last_name 'User'
-  email 'now@example.com'
+  email "#{name}@example.com"
 end
 
 chef_server_user 'was' do
@@ -31,15 +31,12 @@ end
 
 chef_server_user 'del' do
   action :delete
-  first_name name
-  last_name name
-  email "#{name}@example.com"
 end
 
 chef_server_user 'exemplar' do
   first_name 'Example'
   last_name 'User'
-  email 'exemplar@example.com'
+  email "#{name}@example.com"
   password 'dontusethisforreal'
   key_path '/tmp/exemplar.key'
 end
