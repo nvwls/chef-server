@@ -26,3 +26,14 @@ describe command('chef-server-ctl list-user-keys exemplar') do
   its(:exit_status) { should eq 0 }
   its(:stdout) { should match(/name: default\nexpired: false/) }
 end
+
+describe command('chef-server-ctl list-server-admins') do
+  its(:exit_status) { should eq 0 }
+  describe 'stdout' do
+    subject { super().stdout.split }
+    it { should include 'now' }
+    it { should_not include 'was' }
+    it { should_not include 'del' }
+    it { should_not include 'exemplar' }
+  end
+end
